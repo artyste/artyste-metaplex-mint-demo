@@ -1,5 +1,10 @@
 import React, {useState, useEffect} from 'react';
-import {Connection, SystemProgram, Transaction} from "@solana/web3.js";
+import {Connection, Keypair, SystemProgram, Transaction, PublicKey} from "@solana/web3.js";
+
+// MetaPlex Program Address
+const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
+const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 
 const getProvider = () => {
     if ("solana" in window) {
@@ -11,8 +16,7 @@ const getProvider = () => {
     // window.open("https://phantom.app/", "_blank");
 };
 
-
-function App() {
+function App(dataLength, commitment) {
     const provider = getProvider();
     const [publicKey, setpublicKey] = useState(null);
     const [phantomConnect, setPhantomConnect] = useState(false);
@@ -51,45 +55,113 @@ function App() {
     }, [provider]);
 
 
-    const createTransferTransaction = async () => {
-        if (!publicKey) {
-            return;
-        }
-        let transaction = new Transaction().add(
+    const sendTransaction = async () => {
+
+        // Create a Transaction!
+        const transaction = new Transaction().add(
             SystemProgram.transfer({
-                fromPubkey: publicKey,
+                fromPubkey: window.solana.publicKey,
                 toPubkey: 'DGLyGabZHc2Xb7znZD9FiQouYjtb52dgeZEcGY37uvng',
-                lamports: 100,
+                lamports: 1000000000,
             })
         );
-        transaction.feePayer = publicKey;
+        transaction.feePayer = window.solana.publicKey;
         transaction.recentBlockhash = (
             await connection.getRecentBlockhash()
         ).blockhash;
-        return transaction;
-    };
 
 
-    const sendTransaction = async () => {
-        const transaction = await createTransferTransaction();
-        console.log(transaction);
-        console.log(transaction.recentBlockhash);
         if (transaction) {
             try {
+
+                // Signed the Transaction Using Phantom!
                 let signed = await provider.signTransaction(transaction);
+
                 console.log("Got signature, submitting transaction");
+
+                // Send a Transaction!
                 let signature = await connection.sendRawTransaction(signed.serialize());
-        //         addLog(
-        //             "Submitted transaction " + signature + ", awaiting confirmation"
-        //         );
-                await connection.confirmTransaction(signature);
-        //         addLog("Transaction " + signature + " confirmed");
+
+                // Wait the Transaction!
+                await connection.confirmTransaction(signature).then(() => {
+                    console.log("Transaction Succeed!");
+                    console.log(signature);
+                });
+
+
             } catch (err) {
                 console.log(err);
                 console.log("Error: " + JSON.stringify(err));
             }
         }
     };
+
+
+
+
+
+
+
+
+    // MINT ------------------------------------------------------------------------------------------
+
+    const getTokenWallet = async (wallet, mint) => {
+        return (
+            await PublicKey.findProgramAddress(
+                [wallet.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+                SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID
+            )
+        )[0];
+    };
+
+    const getMetadata = async (mint) => {
+        return (
+            await PublicKey.findProgramAddress(
+                [
+                    Buffer.from("metadata"),
+                    TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+                    mint.toBuffer(),
+                ],
+                TOKEN_METADATA_PROGRAM_ID
+            )
+        )[0];
+    };
+
+    const getMasterEdition = async (mint) => {
+        return (
+            await PublicKey.findProgramAddress(
+                [
+                    Buffer.from("metadata"),
+                    TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+                    mint.toBuffer(),
+                    Buffer.from("edition"),
+                ],
+                TOKEN_METADATA_PROGRAM_ID
+            )
+        )[0];
+    };
+
+
+    const sendMint = async () => {
+        console.log('Mint! < -----------')
+
+        const mint = Keypair.generate();
+        const token = await getTokenWallet( window.solana.publicKey, mint.publicKey);
+        console.log(token.toString());
+        const metadata = await getMetadata(mint.publicKey);
+        console.log(metadata.toString());
+        const masterEdition = await getMasterEdition(mint.publicKey);
+        console.log(masterEdition.toString());
+        const rent = await connection.getMinimumBalanceForRentExemption();
+        console.log(rent);
+
+    }
+
+
+
+
+
+
 
 
 
@@ -112,6 +184,8 @@ function App() {
                 <button className="btn btn-danger m-3" onClick={disconnect}>Disconect</button>
 
                 <button className="btn btn-warning m-3" onClick={sendTransaction}>Transaction</button>
+
+                <button className="btn btn-success m-3" onClick={sendMint}>Mint</button>
             </div>
         )}
 
