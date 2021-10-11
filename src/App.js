@@ -181,7 +181,7 @@ function App(dataLength, commitment) {
             <button className="btn btn-primary" onClick={connect}>Connect</button>
         ) : (
             <div>
-                <button className="btn btn-danger m-3" onClick={disconnect}>Disconect</button>
+                <button className="btn btn-danger m-3" onClick={disconnect}>Disconnect</button>
 
                 <button className="btn btn-warning m-3" onClick={sendTransaction}>Transaction</button>
 
