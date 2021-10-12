@@ -1,7 +1,10 @@
 import React, {useState, useEffect} from 'react';
+import { MintLayout, TOKEN_PROGRAM_ID, Token,} from "@solana/spl-token";
+
 import {Connection, Keypair, SystemProgram, Transaction, PublicKey} from "@solana/web3.js";
 
 // MetaPlex Program Address
+export const CANDY_MACHINE_PROGRAM = new PublicKey("cndyAnrLdpjq1Ssp1z8xxDsB8dxe7u4HL5Nxi2K5WXZ");
 const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
@@ -141,24 +144,27 @@ function App(dataLength, commitment) {
         )[0];
     };
 
+    const program = new anchor.Program(idl, CANDY_MACHINE_PROGRAM, provider);
 
     const sendMint = async () => {
         console.log('Mint! < -----------')
 
         const mint = Keypair.generate();
+
         const token = await getTokenWallet( window.solana.publicKey, mint.publicKey);
         console.log(token.toString());
+
         const metadata = await getMetadata(mint.publicKey);
         console.log(metadata.toString());
+
         const masterEdition = await getMasterEdition(mint.publicKey);
         console.log(masterEdition.toString());
+
         const rent = await connection.getMinimumBalanceForRentExemption();
         console.log(rent);
 
+
     }
-
-
-
 
 
 
@@ -170,7 +176,7 @@ function App(dataLength, commitment) {
     return (
     <div className="container-fluid">
     <div className="container text-center mt-5">
-        <h1>Artyste Mint Using MetaPlex</h1>
+        {/*<h1>Artyste Mint Using MetaPlex</h1>*/}
         { publicKey && (
             <div>
                 { publicKey }
